@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
+   "type": "commonjs",
+
   "scripts": {
-    "dev":"nodemon server.js",
+    "dev": "nodemon server.js",
     "start": "node server.js"
   },
   "keywords": [],
@@ -20,11 +22,10 @@
     "mongoose": "^8.16.4"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "serve": "^14.2.4"
   },
   "engines": {
     "node": "18.x"
   }
 }
-
-
