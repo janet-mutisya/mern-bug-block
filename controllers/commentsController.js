@@ -7,7 +7,7 @@ exports.getCommentsForBug = async (req, res) => {
   try {
     const comments = await Comment.find({ bug: req.params.bugId })
       .populate('user', 'name')
-      .sort({ createdAt: -1 }); // most recent first
+      .sort({ createdAt: -1 });
 
     res.json(comments);
   } catch (error) {
@@ -48,7 +48,10 @@ exports.deleteComment = async (req, res) => {
       return res.status(404).json({ message: 'Comment not found' });
     }
 
-    // Optional: Check if req.user._id matches comment.user to allow deletion by owner only
+    // Optionally: check if user is owner or admin
+    if (!comment.user.equals(req.user._id) && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to delete this comment' });
+    }
 
     await comment.remove();
     res.json({ message: 'Comment removed' });
@@ -57,3 +60,4 @@ exports.deleteComment = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+

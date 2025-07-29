@@ -1,26 +1,26 @@
 const Activity = require('../models/activity');
 
-// @desc Get activities for a specific bug
-// @route GET /api/activities/bug/:bugId
-// @access Private
+// GET /api/activities/bug/:bugId
 exports.getActivitiesForBug = async (req, res) => {
   try {
     const activities = await Activity.find({ bug: req.params.bugId })
       .populate('user', 'name')
-      .sort({ createdAt: -1 }); // most recent first
+      .sort({ createdAt: -1 });
 
     res.json(activities);
   } catch (error) {
-    console.error(error);c
+    console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-// @desc Add an activity
-// @route POST /api/activities
-// @access Private
+// POST /api/activities
 exports.addActivity = async (req, res) => {
   const { bug, action, message } = req.body;
+
+  if (!bug || !action || !message) {
+    return res.status(400).json({ message: 'Bug, action, and message are required.' });
+  }
 
   try {
     const activity = new Activity({
@@ -38,9 +38,7 @@ exports.addActivity = async (req, res) => {
   }
 };
 
-// @desc Delete an activity (optional)
-// @route DELETE /api/activities/:id
-// @access Admin (or modify as needed)
+// DELETE /api/activities/:id
 exports.deleteActivity = async (req, res) => {
   try {
     const activity = await Activity.findById(req.params.id);
@@ -49,7 +47,7 @@ exports.deleteActivity = async (req, res) => {
       return res.status(404).json({ message: 'Activity not found' });
     }
 
-    await activity.remove();
+    await Activity.findByIdAndDelete(req.params.id);
     res.json({ message: 'Activity removed' });
   } catch (error) {
     console.error(error);

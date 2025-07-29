@@ -3,9 +3,9 @@
  const { registerUser, login} = require('../controllers/authController')
 
  //register user
- router.post('/auth/signup', registerUser);
+ router.post('/signup', registerUser);
 
  // login user
- router.post('/auth/login', login);
+ router.post('/login', login);
 
  module.exports = router;

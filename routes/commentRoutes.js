@@ -8,3 +8,4 @@ router.post('/', protect, commentController.addComment);
 router.delete('/:id', protect, commentController.deleteComment);
 
 module.exports = router;
+

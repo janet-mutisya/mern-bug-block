@@ -1,100 +1,118 @@
-const Bug = require('../models/bug');
+const Bug = require("../models/bug");
+const Activity = require("../models/activity");
 
-// @desc Get all bugs
-// @route GET /api/bugs
-// @access Private
-exports.getAllBugs = async (req, res) => {
-  try {
-    const bugs = await Bug.find().populate('createdBy', 'name').populate('assignedTo', 'name');
-    res.json(bugs);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-// @desc Get single bug by ID
-// @route GET /api/bugs/:id
-// @access Private
-exports.getBugById = async (req, res) => {
-  try {
-    const bug = await Bug.findById(req.params.id).populate('createdBy', 'name').populate('assignedTo', 'name');
-
-    if (!bug) {
-      return res.status(404).json({ message: 'Bug not found' });
-    }
-
-    res.json(bug);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-// @desc Create a new bug
-// @route POST /api/bugs
-// @access Private
+// Create bug
 exports.createBug = async (req, res) => {
-  const { title, description, assignedTo } = req.body;
-
   try {
-    const bug = new Bug({
+    const { title, description, status, assignedTo } = req.body;
+
+    const bug = await Bug.create({
       title,
       description,
+      status,
       createdBy: req.user._id,
-      assignedTo
+      assignedTo: assignedTo || null,
     });
 
-    await bug.save();
+    await Activity.create({
+      bug: bug._id,
+      user: req.user._id,
+      action: "created a bug",
+      message: `Created "${title}"`,
+    });
+
     res.status(201).json(bug);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+  } catch (err) {
+    console.error("Bug creation failed:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// @desc Update bug
-// @route PUT /api/bugs/:id
-// @access Private
-exports.updateBug = async (req, res) => {
-  const { title, description, status, assignedTo } = req.body;
-
+// Get all bugs
+exports.getAllBugs = async (req, res) => {
   try {
-    const bug = await Bug.findById(req.params.id);
+    const bugs = await Bug.find()
+      .populate("createdBy", "name")
+      .populate("assignedTo", "name")
+      .sort({ createdAt: -1 });
+
+    res.json(bugs);
+  } catch (err) {
+    console.error("Fetching bugs failed:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Get single bug
+exports.getBugById = async (req, res) => {
+  try {
+    const bug = await Bug.findById(req.params.id)
+      .populate("createdBy", "name")
+      .populate("assignedTo", "name");
 
     if (!bug) {
-      return res.status(404).json({ message: 'Bug not found' });
+      return res.status(404).json({ message: "Bug not found" });
     }
 
-    bug.title = title || bug.title;
-    bug.description = description || bug.description;
-    bug.status = status || bug.status;
-    bug.assignedTo = assignedTo || bug.assignedTo;
-
-    await bug.save();
-
     res.json(bug);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+  } catch (err) {
+    console.error("Fetching bug failed:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// @desc Delete bug
-// @route DELETE /api/bugs/:id
-// @access Private
+// Update bug
+exports.updateBug = async (req, res) => {
+  try {
+    const bug = await Bug.findById(req.params.id);
+    if (!bug) {
+      return res.status(404).json({ message: "Bug not found" });
+    }
+
+    const { title, description, status, assignedTo } = req.body;
+
+    const oldTitle = bug.title;
+
+    bug.title = title;
+    bug.description = description;
+    bug.status = status;
+    bug.assignedTo = assignedTo || null;
+
+    await bug.save();
+
+    await Activity.create({
+      bug: bug._id,
+      user: req.user._id,
+      action: "updated the bug",
+      message: `Updated "${oldTitle}" to "${title}", status: ${status}`,
+    });
+
+    res.json(bug);
+  } catch (err) {
+    console.error("Updating bug failed:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Delete bug
 exports.deleteBug = async (req, res) => {
   try {
     const bug = await Bug.findById(req.params.id);
-
     if (!bug) {
-      return res.status(404).json({ message: 'Bug not found' });
+      return res.status(404).json({ message: "Bug not found" });
     }
 
+    await Activity.create({
+      bug: bug._id,
+      user: req.user._id,
+      action: "deleted the bug",
+      message: `Deleted bug "${bug.title}"`,
+    });
+
     await bug.remove();
-    res.json({ message: 'Bug removed' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.json({ message: "Bug deleted" });
+  } catch (err) {
+    console.error("Deleting bug failed:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };

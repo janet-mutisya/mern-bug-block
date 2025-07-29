@@ -1,17 +1,22 @@
-const User = require('../models/User');
+const User = require('../models/user');
 
 // @desc Get all users
 // @route GET /api/users
 // @access Admin
 exports.getAllUsers = async (req, res) => {
+  const user = req.user;
   try {
-    const users = await User.find().select('-password');
+    if (!user || user.role !== 'admin') {
+      return res.status(401).json({message: 'Not authorized'})
+    }
+    const users = await User.find().select('-password'); 
     res.json(users);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 // @desc Get single user by ID
 // @route GET /api/users/:id
