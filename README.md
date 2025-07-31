@@ -19,11 +19,7 @@ A **full-stack MERN application** where users can **track bugs/issues** in their
 ---
 
 ## 🌐 Live Demo
-
-[View deployed app here](https://your-deployment-link.com)  
-*(Replace with your actual deployment URL)*
-
----
+not yet deployed
 
 ## 🛠 Tech Stack
 
@@ -40,5 +36,5 @@ A **full-stack MERN application** where users can **track bugs/issues** in their
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/mern-bug-tracker-blog.git
+git clone https://github.com/janet-mutisya/mern-bug-tracker-blog.git
 cd mern-bug-tracker-blog
