@@ -1,12 +1,13 @@
 import axios from "axios";
 
-// Create base Axios instance
+const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+
 const api = axios.create({
-  baseURL:"http://localhost:3000/api",
+  baseURL,
   withCredentials: true,
 });
 
-// Request interceptor to add auth token
+// ===== Request Interceptor (adds token to headers) =====
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
@@ -15,7 +16,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor for global error handling
+// ===== Response Interceptor (handles 401 errors globally) =====
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -27,56 +28,37 @@ api.interceptors.response.use(
   }
 );
 
-//
-// ===== Auth Routes =====
-//
+//auth routes
+import axios from "axios";
 
-// Login
-export const login = (data) => api.post("/auth/login", data);
+export const signup = async (formData) => {
+  const response = await axios.post("/api/auth/signup", formData);
+  return response.data; // this includes message, user, token
+};
 
-// Signup
-export const signup = (data) => api.post("/auth/signup", data);
 
-// Get current user profile
-export const getProfile = () => api.get("/auth/me");
+export const getMe = () => api.get("/auth/me");
 
 //
 // ===== Bug Routes =====
 //
-
-// Create bug
 export const createBug = (data) => api.post("/bugs", data);
-
-// Get all bugs
 export const getAllBugs = () => api.get("/bugs");
-
-// Get single bug by ID
 export const getBugById = (id) => api.get(`/bugs/${id}`);
-
-// Update bug
 export const updateBug = (id, data) => api.put(`/bugs/${id}`, data);
-
-// Delete bug
 export const deleteBug = (id) => api.delete(`/bugs/${id}`);
 
 //
 // ===== Comment Routes =====
 //
-
-// Get comments for a bug
 export const getComments = (bugId) => api.get(`/comments/${bugId}`);
-
-// Add comment
 export const addComment = (bugId, text) => api.post(`/comments/${bugId}`, { text });
-
-// Delete comment
 export const deleteComment = (commentId) => api.delete(`/comments/${commentId}`);
 
 //
 // ===== Activity Logs =====
 //
-
-// Get activity logs for a bug
 export const getBugActivities = (bugId) => api.get(`/activities/${bugId}`);
 
 export default api;
+

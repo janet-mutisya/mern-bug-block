@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signup } from "../lib/api";
+import { Button } from "@/components/ui/button";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -17,17 +18,16 @@ export default function Signup() {
     setError(null);
     setLoading(true);
     try {
-      await signup(formData);
-      navigate("/login");
-    } catch (err) {
-      setError(err.response?.data?.message || "Signup failed.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const result = await signup(formData);
+  console.log("Signup success:", result);
+  navigate("/login");
+} catch (err) {
+  console.error("Signup error:", err);
+  setError(err.response?.data?.message || "Signup failed.");
+setLoading(false)
+}}
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 shadow rounded bg-white">
+    <div className="max-w-75 mx-auto mt-10 p-6 shadow rounded bg-white">
       <h2 className="text-2xl font-bold mb-4 text-center">Signup</h2>
       {error && <p className="text-red-600 mb-4">{error}</p>}
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -58,15 +58,13 @@ export default function Signup() {
           onChange={handleChange}
           required
         />
-        <button
+        <Button
           disabled={loading}
-          className={`w-full text-white py-2 rounded ${
-            loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
-          }`}
+         variant="secondary"
         >
           {loading ? "Signing up..." : "Sign Up"}
-        </button>
+        </Button>
       </form>
     </div>
   );
-}
+  }
