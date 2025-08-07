@@ -1,47 +1,49 @@
-const express = require('express');
-const cors = require ('cors');
-const bcrypt = require('bcryptjs');
-const dotenv = require('dotenv');
-const connectDB = require('./config/db');
-const mongoose = require('mongoose');
-
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+const cors = require("cors");
+const dotenv = require("dotenv");
+const connectDB = require("./config/db");
+const bugRoutes = require("./routes/bugRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 dotenv.config();
 connectDB();
 
-const app = express()
-app.use(express.json());
-app.use(cors({
-  origin: "http://localhost:5173",   
-  credentials: true                  
-}));
-
-const PORT = process.env.PORT || 3000;
-
-// routes
-app.get('/', (req, res) => {
- res.send('Bug tracker api is running..')
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  },
 });
 
-// auth routes
-const authRoutes = require("./routes/authRoutes");
-app.use("/api/auth", authRoutes); 
+// Middleware
+app.use(cors({
+  origin: "http://localhost:5173",  
+  credentials: true                 
+}));
+        
 
-// user routes
-const userRoutes = require('./routes/userRoutes');
-app.use('/api/users', userRoutes);
+app.use(express.json());
 
+// Routes
+app.use("/api/bugs", bugRoutes);
+app.use("/api/auth", authRoutes);
 
-// bug routes
-const bugRoutes = require('./routes/bugRoutes');
-app.use('/api', bugRoutes);
+// Socket setup
+io.on("connection", (socket) => {
+  console.log("Client connected: " + socket.id);
 
-// activity routes 
-const activityRoutes= require('./routes/activityRoutes');
-app.use('/api', activityRoutes);
+  socket.on("disconnect", () => {
+    console.log("Client disconnected: " + socket.id);
+  });
+});
 
-// comment routes
-const commentRoutes = require('./routes/commentRoutes');
-app.use('/api/comments', commentRoutes);
+// Attach io to app
+app.set("io", io);
 
-app.listen(PORT, () => {console.log (`Server is running at http://localhost:${PORT}`)});
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+

@@ -1,42 +1,54 @@
-import React, { useEffect, useState } from "react";
-import api from "../lib/api";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
-export default function ActivityLog({ bugId }) {
-  const [activities, setActivities] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function Activity() {
+  const [logs, setLogs] = useState([]);
+
+  // Get the user from localStorage (or useContext if you’re using global auth)
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?._id;
 
   useEffect(() => {
-    fetchActivities();
-  }, [bugId]);
+    const fetchLogs = async () => {
+      try {
+        if (!userId) return;
 
-  const fetchActivities = async () => {
-    try {
-      const res = await api.get(`/api/activities/bug/${bugId}`);
-      setActivities(res.data);
-    } catch (err) {
-      console.error("Error fetching activity log:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+        const res = await axios.get(
+          `http://localhost:3000/api/activities/${userId}`,
+          { withCredentials: true }
+        );
+        setLogs(res.data);
+      } catch (err) {
+        console.error("Error loading logs", err);
+      }
+    };
 
-  if (loading) return <p className="text-sm text-gray-500">Loading activity...</p>;
-  if (activities.length === 0) return <p className="text-sm text-gray-400">No activity yet.</p>;
+    fetchLogs();
+  }, [userId]);
 
   return (
-    <div className="bg-gray-50 border rounded-lg p-4 mt-4 space-y-2 text-sm">
-      <h4 className="font-semibold mb-2 text-gray-700">Activity Log</h4>
-      {activities.map((a) => (
-        <div key={a._id} className="border-b pb-2 last:border-none last:pb-0">
-          <p>
-            <span className="font-medium">{a.user?.name || "Unknown"}</span>
-             {a.action}
-          </p>
-          <p className="text-gray-500">{a.message}</p>
-          <p className="text-gray-400 text-xs">{new Date(a.createdAt).
-          toLocaleString()}</p>
-        </div>
-      ))}
+    <div className="max-w-4xl mx-auto p-6">
+      <h2 className="text-2xl font-semibold text-center mb-4">Activity Logs</h2>
+
+      {logs.length === 0 ? (
+        <p className="text-center text-gray-500">No activity logs yet.</p>
+      ) : (
+        <ul className="space-y-4">
+          {logs.map((log) => (
+            <li
+              key={log._id}
+              className="border border-gray-700 bg-gray-800 rounded-lg p-4 shadow"
+            >
+              <p className="text-yellow-300 font-medium">{log.action}</p>
+              <p className="text-gray-300">{log.message}</p>
+              <p className="text-gray-500 text-sm">
+                {new Date(log.createdAt).toLocaleString()}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
+

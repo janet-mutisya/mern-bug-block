@@ -1,56 +1,39 @@
-const Activity = require('../models/activity');
+// controllers/activityController.js
+const Activity = require("../models/Activity");
 
-// GET /api/activities/bug/:bugId
-exports.getActivitiesForBug = async (req, res) => {
+// Create a new activity log
+const createActivity = async (req, res) => {
   try {
-    const activities = await Activity.find({ bug: req.params.bugId })
-      .populate('user', 'name')
-      .sort({ createdAt: -1 });
+    const activity = await Activity.create(req.body);
 
-    res.json(activities);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
+    // Emit event to clients
+    const io = req.app.get("io");
+    io.emit("activityUpdated", activity);
 
-// POST /api/activities
-exports.addActivity = async (req, res) => {
-  const { bug, action, message } = req.body;
-
-  if (!bug || !action || !message) {
-    return res.status(400).json({ message: 'Bug, action, and message are required.' });
-  }
-
-  try {
-    const activity = new Activity({
-      bug,
-      user: req.user._id,
-      action,
-      message,
-    });
-
-    await activity.save();
     res.status(201).json(activity);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// DELETE /api/activities/:id
-exports.deleteActivity = async (req, res) => {
+// Delete an activity
+const deleteActivity = async (req, res) => {
   try {
-    const activity = await Activity.findById(req.params.id);
+    const activity = await Activity.findByIdAndDelete(req.params.id);
 
-    if (!activity) {
-      return res.status(404).json({ message: 'Activity not found' });
-    }
+    if (!activity) return res.status(404).json({ message: "Not found" });
 
-    await Activity.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Activity removed' });
+    // Emit event to clients
+    const io = req.app.get("io");
+    io.emit("activityUpdated", { deletedId: activity._id });
+
+    res.json({ message: "Deleted" });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: error.message });
   }
+};
+
+module.exports = {
+  createActivity,
+  deleteActivity,
 };

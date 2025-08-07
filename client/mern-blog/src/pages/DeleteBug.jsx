@@ -1,6 +1,4 @@
-// DeleteConfirm.jsx
 import React, { useState } from "react";
-
 
 export default function DeleteConfirm({ bugId, onConfirm, onCancel }) {
   const [loading, setLoading] = useState(false);

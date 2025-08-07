@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { login } from "../lib/api";
@@ -12,26 +13,28 @@ export default function Login() {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value.trim() });
   };
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError(null);
-  setLoading(true);
 
-  try {
-    const res = await login(formData);
-    console.log("Login response:", res);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
 
-    // Access data correctly through res.data
-    localStorage.setItem("token", res.data.token);
-    localStorage.setItem("user", JSON.stringify(res.data.user));
-    
-    window.location.href = "/dashboard";
-  } catch (err) {
-    setError(err.response?.data?.message || "Invalid email or password.");
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      const res = await login(formData);
+      console.log("Login response:", res);
+
+      // Fixed: Access token and user directly from res (not res.data)
+      localStorage.setItem("token", res.token);
+      localStorage.setItem("user", JSON.stringify(res.user));
+      
+      // Fixed: Use navigate instead of window.location.href
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid email or password.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="max-w-75 mx-auto mt-10 mb-10 p-6 shadow rounded bg-white">
@@ -58,7 +61,7 @@ const handleSubmit = async (e) => {
         />
         <Button
           disabled={loading}
-        variant="secondary"
+          variant="secondary"
         >
           {loading ? "Logging in..." : "Login"}
         </Button>

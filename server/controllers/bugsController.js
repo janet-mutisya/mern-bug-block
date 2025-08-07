@@ -1,7 +1,39 @@
 const Bug = require("../models/bug");
 const Activity = require("../models/activity");
 
-// Create bug
+// Get all bugs
+exports.getAllBugs = async (req, res) => {
+  try {
+    const bugs = await Bug.find()
+      .populate("createdBy", "name")
+      .populate("assignedTo", "name");
+
+    res.json(bugs);
+  } catch (err) {
+    console.error("Error fetching all bugs:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Get single bug by ID
+exports.getBugById = async (req, res) => {
+  try {
+    const bug = await Bug.findById(req.params.id)
+      .populate("createdBy", "name")
+      .populate("assignedTo", "name");
+
+    if (!bug) {
+      return res.status(404).json({ message: "Bug not found" });
+    }
+
+    res.json(bug);
+  } catch (err) {
+    console.error("Error fetching bug by ID:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Create new bug
 exports.createBug = async (req, res) => {
   try {
     const { title, description, status, assignedTo } = req.body;
@@ -17,51 +49,21 @@ exports.createBug = async (req, res) => {
     await Activity.create({
       bug: bug._id,
       user: req.user._id,
-      action: "created a bug",
-      message: `Created "${title}"`,
+      action: "created",
+      message: `Created bug "${title}"`,
     });
+
+    const io = req.app.get("io");
+    io.emit("bugCreated", bug);
 
     res.status(201).json(bug);
   } catch (err) {
-    console.error("Bug creation failed:", err);
+    console.error("Error creating bug:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Get all bugs
-exports.getAllBugs = async (req, res) => {
-  try {
-    const bugs = await Bug.find()
-      .populate("createdBy", "name")
-      .populate("assignedTo", "name")
-      .sort({ createdAt: -1 });
-
-    res.json(bugs);
-  } catch (err) {
-    console.error("Fetching bugs failed:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// Get single bug
-exports.getBugById = async (req, res) => {
-  try {
-    const bug = await Bug.findById(req.params.id)
-      .populate("createdBy", "name")
-      .populate("assignedTo", "name");
-
-    if (!bug) {
-      return res.status(404).json({ message: "Bug not found" });
-    }
-
-    res.json(bug);
-  } catch (err) {
-    console.error("Fetching bug failed:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// Update bug
+// Update existing bug
 exports.updateBug = async (req, res) => {
   try {
     const bug = await Bug.findById(req.params.id);
@@ -70,7 +72,6 @@ exports.updateBug = async (req, res) => {
     }
 
     const { title, description, status, assignedTo } = req.body;
-
     const oldTitle = bug.title;
 
     bug.title = title;
@@ -83,13 +84,16 @@ exports.updateBug = async (req, res) => {
     await Activity.create({
       bug: bug._id,
       user: req.user._id,
-      action: "updated the bug",
-      message: `Updated "${oldTitle}" to "${title}", status: ${status}`,
+      action: "updated",
+      message: `Updated "${oldTitle}" → "${title}", status: ${status}`,
     });
+
+    const io = req.app.get("io");
+    io.emit("bugUpdated", bug);
 
     res.json(bug);
   } catch (err) {
-    console.error("Updating bug failed:", err);
+    console.error("Error updating bug:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -102,17 +106,21 @@ exports.deleteBug = async (req, res) => {
       return res.status(404).json({ message: "Bug not found" });
     }
 
+    await Bug.deleteOne({ _id: req.params.id });
+
     await Activity.create({
       bug: bug._id,
       user: req.user._id,
-      action: "deleted the bug",
-      message: `Deleted bug "${bug.title}"`,
+      action: "deleted",
+      message: `Deleted "${bug.title}"`,
     });
 
-    await bug.remove();
-    res.json({ message: "Bug deleted" });
+    const io = req.app.get("io");
+    io.emit("bugDeleted", { bugId: req.params.id });
+
+    res.json({ message: "Bug deleted successfully" });
   } catch (err) {
-    console.error("Deleting bug failed:", err);
+    console.error("Error deleting bug:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
