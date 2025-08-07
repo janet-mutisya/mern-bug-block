@@ -12,27 +12,28 @@ connectDB();
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "https://mern-bug-block-23.onrender.com",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-  },
-});
 
-// Middleware
+// Proper CORS setup
 app.use(cors({
-  origin: "http://localhost:5173",  
-  credentials: true                 
+  origin: ['http://localhost:5173', 'https://mern-bug-block-23.onrender.com'],
+  credentials: true
 }));
-        
 
+// midddleware
 app.use(express.json());
 
-// Routes
+// API Routes
 app.use("/api/bugs", bugRoutes);
 app.use("/api/auth", authRoutes);
 
-// Socket setup
+// Socket.io setup
+const io = new Server(server, {
+  cors: {
+    origin: ['http://localhost:5173', 'https://mern-bug-block-23.onrender.com'],
+    credentials: true
+  }
+});
+
 io.on("connection", (socket) => {
   console.log("Client connected: " + socket.id);
 
@@ -41,9 +42,11 @@ io.on("connection", (socket) => {
   });
 });
 
-// Attach io to app
+// Attach io to app for access in controllers (optional)
 app.set("io", io);
 
+// Start the server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
 
