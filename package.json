@@ -5,6 +5,7 @@
   "main": "server.js",
   
   "scripts": {
+    "build": "npm run build --prefix client",
     "start": "node server.js"
   },
   "keywords": [],
